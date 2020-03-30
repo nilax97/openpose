@@ -1,10 +1,10 @@
-#include <openpose/core/cvMatToOpOutput.hpp>
 #ifdef USE_CUDA
     #include <openpose/gpu/cuda.hpp>
+    #include <openpose/gpu/cuda.hu>
     #include <openpose/net/resizeAndMergeBase.hpp>
-    #include <openpose_private/gpu/cuda.hu>
 #endif
-#include <openpose_private/utilities/openCvPrivate.hpp>
+#include <openpose/utilities/openCv.hpp>
+#include <openpose/core/cvMatToOpOutput.hpp>
 
 namespace op
 {
@@ -74,11 +74,10 @@ namespace op
     }
 
     Array<float> CvMatToOpOutput::createArray(
-         const Matrix& inputData, const double scaleInputToOutput, const Point<int>& outputResolution)
+         const cv::Mat& cvInputData, const double scaleInputToOutput, const Point<int>& outputResolution)
     {
         try
         {
-            cv::Mat cvInputData = OP_OP2CVCONSTMAT(inputData);
             // Sanity checks
             if (cvInputData.empty())
                 error("Wrong input element (empty cvInputData).", __LINE__, __FUNCTION__, __FILE__);
@@ -95,9 +94,7 @@ namespace op
             {
                 cv::Mat frameWithOutputSize;
                 resizeFixedAspectRatio(frameWithOutputSize, cvInputData, scaleInputToOutput, outputResolution);
-                // Equivalent: frameWithOutputSize.convertTo(outputData.getCvMat(), CV_32FC3);
-                cv::Mat cvOutputData = OP_OP2CVMAT(outputData.getCvMat());
-                frameWithOutputSize.convertTo(cvOutputData, CV_32FC3);
+                frameWithOutputSize.convertTo(outputData.getCvMat(), CV_32FC3);
             }
             // CUDA version (if #Gpus > 3)
             else

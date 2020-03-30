@@ -43,7 +43,7 @@ namespace op
         const bool mWebcamStarted;
         long long mFrameNameCounter;
         bool mThreadOpened;
-        Matrix mBuffer;
+        cv::Mat mBuffer;
         std::mutex mBufferMutex;
         std::atomic<bool> mCloseThread;
         std::thread mThread;
@@ -52,9 +52,9 @@ namespace op
         std::atomic<int> mDisconnectedCounter;
         Point<int> mResolution;
 
-        Matrix getRawFrame();
+        cv::Mat getRawFrame();
 
-        std::vector<Matrix> getRawFrames();
+        std::vector<cv::Mat> getRawFrames();
 
         void bufferingThread();
 

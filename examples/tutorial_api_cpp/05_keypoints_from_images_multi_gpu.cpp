@@ -2,9 +2,7 @@
 // It reads images, process them, and display them with the pose (and optionally hand and face) keypoints. In addition,
 // it includes all the OpenPose configuration flags (enable/disable hand, face, output saving, etc.).
 
-// Third-party dependencies
-#include <opencv2/opencv.hpp>
-// Command-line user interface
+// Command-line user intraface
 #define OPENPOSE_FLAGS_DISABLE_PRODUCER
 #define OPENPOSE_FLAGS_DISABLE_DISPLAY
 #include <openpose/flags.hpp>
@@ -36,11 +34,10 @@ bool display(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>>& dat
         if (datumsPtr != nullptr && !datumsPtr->empty())
         {
             // Display image and sleeps at least 1 ms (it usually sleeps ~5-10 msec to display the image)
-            const cv::Mat cvMat = OP_OP2CVCONSTMAT(datumsPtr->at(0)->cvOutputData);
-            cv::imshow(OPEN_POSE_NAME_AND_VERSION + " - Tutorial C++ API", cvMat);
+            cv::imshow(OPEN_POSE_NAME_AND_VERSION + " - Tutorial C++ API", datumsPtr->at(0)->cvOutputData);
         }
         else
-            op::opLog("Nullptr or empty datumsPtr found.", op::Priority::High);
+            op::log("Nullptr or empty datumsPtr found.", op::Priority::High);
         const auto key = (char)cv::waitKey(1);
         return (key == 27);
     }
@@ -58,13 +55,13 @@ void printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
         // Example: How to use the pose keypoints
         if (datumsPtr != nullptr && !datumsPtr->empty())
         {
-            op::opLog("Body keypoints: " + datumsPtr->at(0)->poseKeypoints.toString(), op::Priority::High);
-            op::opLog("Face keypoints: " + datumsPtr->at(0)->faceKeypoints.toString(), op::Priority::High);
-            op::opLog("Left hand keypoints: " + datumsPtr->at(0)->handKeypoints[0].toString(), op::Priority::High);
-            op::opLog("Right hand keypoints: " + datumsPtr->at(0)->handKeypoints[1].toString(), op::Priority::High);
+            op::log("Body keypoints: " + datumsPtr->at(0)->poseKeypoints.toString(), op::Priority::High);
+            op::log("Face keypoints: " + datumsPtr->at(0)->faceKeypoints.toString(), op::Priority::High);
+            op::log("Left hand keypoints: " + datumsPtr->at(0)->handKeypoints[0].toString(), op::Priority::High);
+            op::log("Right hand keypoints: " + datumsPtr->at(0)->handKeypoints[1].toString(), op::Priority::High);
         }
         else
-            op::opLog("Nullptr or empty datumsPtr found.", op::Priority::High);
+            op::log("Nullptr or empty datumsPtr found.", op::Priority::High);
     }
     catch (const std::exception& e)
     {
@@ -79,30 +76,28 @@ void configureWrapper(op::Wrapper& opWrapper)
         // Configuring OpenPose
 
         // logging_level
-        op::checkBool(
-            0 <= FLAGS_logging_level && FLAGS_logging_level <= 255, "Wrong logging_level value.",
-            __LINE__, __FUNCTION__, __FILE__);
+        op::check(0 <= FLAGS_logging_level && FLAGS_logging_level <= 255, "Wrong logging_level value.",
+                  __LINE__, __FUNCTION__, __FILE__);
         op::ConfigureLog::setPriorityThreshold((op::Priority)FLAGS_logging_level);
         op::Profiler::setDefaultX(FLAGS_profile_speed);
 
         // Applying user defined configuration - GFlags to program variables
         // outputSize
-        const auto outputSize = op::flagsToPoint(op::String(FLAGS_output_resolution), "-1x-1");
+        const auto outputSize = op::flagsToPoint(FLAGS_output_resolution, "-1x-1");
         // netInputSize
-        const auto netInputSize = op::flagsToPoint(op::String(FLAGS_net_resolution), "-1x368");
+        const auto netInputSize = op::flagsToPoint(FLAGS_net_resolution, "-1x368");
         // faceNetInputSize
-        const auto faceNetInputSize = op::flagsToPoint(op::String(FLAGS_face_net_resolution), "368x368 (multiples of 16)");
+        const auto faceNetInputSize = op::flagsToPoint(FLAGS_face_net_resolution, "368x368 (multiples of 16)");
         // handNetInputSize
-        const auto handNetInputSize = op::flagsToPoint(op::String(FLAGS_hand_net_resolution), "368x368 (multiples of 16)");
+        const auto handNetInputSize = op::flagsToPoint(FLAGS_hand_net_resolution, "368x368 (multiples of 16)");
         // poseMode
         const auto poseMode = op::flagsToPoseMode(FLAGS_body);
         // poseModel
-        const auto poseModel = op::flagsToPoseModel(op::String(FLAGS_model_pose));
+        const auto poseModel = op::flagsToPoseModel(FLAGS_model_pose);
         // JSON saving
         if (!FLAGS_write_keypoint.empty())
-            op::opLog(
-                "Flag `write_keypoint` is deprecated and will eventually be removed. Please, use `write_json`"
-                " instead.", op::Priority::Max);
+            op::log("Flag `write_keypoint` is deprecated and will eventually be removed."
+                    " Please, use `write_json` instead.", op::Priority::Max);
         // keypointScaleMode
         const auto keypointScaleMode = op::flagsToScaleMode(FLAGS_keypoint_scale);
         // heatmaps to add
@@ -122,10 +117,9 @@ void configureWrapper(op::Wrapper& opWrapper)
             poseMode, netInputSize, outputSize, keypointScaleMode, FLAGS_num_gpu, FLAGS_num_gpu_start,
             FLAGS_scale_number, (float)FLAGS_scale_gap, op::flagsToRenderMode(FLAGS_render_pose, multipleView),
             poseModel, !FLAGS_disable_blending, (float)FLAGS_alpha_pose, (float)FLAGS_alpha_heatmap,
-            FLAGS_part_to_show, op::String(FLAGS_model_folder), heatMapTypes, heatMapScaleMode, FLAGS_part_candidates,
+            FLAGS_part_to_show, FLAGS_model_folder, heatMapTypes, heatMapScaleMode, FLAGS_part_candidates,
             (float)FLAGS_render_threshold, FLAGS_number_people_max, FLAGS_maximize_positives, FLAGS_fps_max,
-            op::String(FLAGS_prototxt_path), op::String(FLAGS_caffemodel_path),
-            (float)FLAGS_upsampling_ratio, enableGoogleLogging};
+            FLAGS_prototxt_path, FLAGS_caffemodel_path, (float)FLAGS_upsampling_ratio, enableGoogleLogging};
         opWrapper.configure(wrapperStructPose);
         // Face configuration (use op::WrapperStructFace{} to disable it)
         const op::WrapperStructFace wrapperStructFace{
@@ -145,13 +139,11 @@ void configureWrapper(op::Wrapper& opWrapper)
         opWrapper.configure(wrapperStructExtra);
         // Output (comment or use default argument to disable any output)
         const op::WrapperStructOutput wrapperStructOutput{
-            FLAGS_cli_verbose, op::String(FLAGS_write_keypoint), op::stringToDataFormat(FLAGS_write_keypoint_format),
-            op::String(FLAGS_write_json), op::String(FLAGS_write_coco_json), FLAGS_write_coco_json_variants,
-            FLAGS_write_coco_json_variant, op::String(FLAGS_write_images), op::String(FLAGS_write_images_format),
-            op::String(FLAGS_write_video), FLAGS_write_video_fps, FLAGS_write_video_with_audio,
-            op::String(FLAGS_write_heatmaps), op::String(FLAGS_write_heatmaps_format), op::String(FLAGS_write_video_3d),
-            op::String(FLAGS_write_video_adam), op::String(FLAGS_write_bvh), op::String(FLAGS_udp_host),
-            op::String(FLAGS_udp_port)};
+            FLAGS_cli_verbose, FLAGS_write_keypoint, op::stringToDataFormat(FLAGS_write_keypoint_format),
+            FLAGS_write_json, FLAGS_write_coco_json, FLAGS_write_coco_json_variants, FLAGS_write_coco_json_variant,
+            FLAGS_write_images, FLAGS_write_images_format, FLAGS_write_video, FLAGS_write_video_fps,
+            FLAGS_write_video_with_audio, FLAGS_write_heatmaps, FLAGS_write_heatmaps_format, FLAGS_write_video_3d,
+            FLAGS_write_video_adam, FLAGS_write_bvh, FLAGS_udp_host, FLAGS_udp_port};
         opWrapper.configure(wrapperStructOutput);
         // No GUI. Equivalent to: opWrapper.configure(op::WrapperStructGui{});
         // Set to single-thread (for sequential processing and/or debugging and/or reducing latency)
@@ -168,11 +160,11 @@ int tutorialApiCpp()
 {
     try
     {
-        op::opLog("Starting OpenPose demo...", op::Priority::High);
+        op::log("Starting OpenPose demo...", op::Priority::High);
         const auto opTimer = op::getTimerInit();
 
         // Configuring OpenPose
-        op::opLog("Configuring OpenPose...", op::Priority::High);
+        op::log("Configuring OpenPose...", op::Priority::High);
         op::Wrapper opWrapper{op::ThreadManagerMode::Asynchronous};
         configureWrapper(opWrapper);
         // Increase maximum wrapper queue size
@@ -180,7 +172,7 @@ int tutorialApiCpp()
             opWrapper.setDefaultMaxSizeQueues(std::numeric_limits<long long>::max());
 
         // Starting OpenPose
-        op::opLog("Starting thread(s)...", op::Priority::High);
+        op::log("Starting thread(s)...", op::Priority::High);
         opWrapper.start();
 
         // Read frames on directory
@@ -207,8 +199,7 @@ int tutorialApiCpp()
                     {
                         const auto& imagePath = imagePaths.at(imageId);
                         // Faster alternative that moves imageToProcess
-                        cv::Mat cvImageToProcess = cv::imread(imagePath);
-                        op::Matrix imageToProcess = OP_CV2OPMAT(cvImageToProcess);
+                        auto imageToProcess = cv::imread(imagePath);
                         opWrapper.waitAndEmplace(imageToProcess);
                         // // Slower but safer alternative that copies imageToProcess
                         // const auto imageToProcess = cv::imread(imagePath);
@@ -231,13 +222,13 @@ int tutorialApiCpp()
                                 const auto userWantsToExit = display(datumProcessed);
                                 if (userWantsToExit)
                                 {
-                                    op::opLog("User pressed Esc to exit demo.", op::Priority::High);
+                                    op::log("User pressed Esc to exit demo.", op::Priority::High);
                                     break;
                                 }
                             }
                         }
                         else
-                            op::opLog("Image could not be processed.", op::Priority::High);
+                            op::log("Image could not be processed.", op::Priority::High);
                     }
                 }
             }
@@ -250,19 +241,18 @@ int tutorialApiCpp()
         else
         {
             // Read and push all images into OpenPose wrapper
-            op::opLog("Loading images into OpenPose wrapper...", op::Priority::High);
+            op::log("Loading images into OpenPose wrapper...", op::Priority::High);
             for (const auto& imagePath : imagePaths)
             {
                 // Faster alternative that moves imageToProcess
-                cv::Mat cvImageToProcess = cv::imread(imagePath);
-                op::Matrix imageToProcess = OP_CV2OPMAT(cvImageToProcess);
+                auto imageToProcess = cv::imread(imagePath);
                 opWrapper.waitAndEmplace(imageToProcess);
                 // // Slower but safer alternative that copies imageToProcess
                 // const auto imageToProcess = cv::imread(imagePath);
                 // opWrapper.waitAndPush(imageToProcess);
             }
             // Retrieve processed results from OpenPose wrapper
-            op::opLog("Retrieving results from OpenPose wrapper...", op::Priority::High);
+            op::log("Retrieving results from OpenPose wrapper...", op::Priority::High);
             for (auto imageId = 0u ; imageId < imagePaths.size() ; imageId++)
             {
                 std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> datumProcessed;
@@ -275,13 +265,13 @@ int tutorialApiCpp()
                         const auto userWantsToExit = display(datumProcessed);
                         if (userWantsToExit)
                         {
-                            op::opLog("User pressed Esc to exit demo.", op::Priority::High);
+                            op::log("User pressed Esc to exit demo.", op::Priority::High);
                             break;
                         }
                     }
                 }
                 else
-                    op::opLog("Image could not be processed.", op::Priority::High);
+                    op::log("Image could not be processed.", op::Priority::High);
             }
         }
 

@@ -182,12 +182,12 @@ namespace op
     {
         try
         {
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             // Set threads
             multisetToThreads();
             if (!mThreads.empty())
             {
-                opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+                log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
                 // Start threads
                 for (auto i = 0u; i < mThreads.size() - 1; i++)
                     mThreads.at(i)->startInThread();
@@ -195,7 +195,7 @@ namespace op
                 // Stop threads - It will arrive here when the exec() command has finished
                 stop();
             }
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
         }
         catch (const std::exception& e)
         {
@@ -208,13 +208,13 @@ namespace op
     {
         try
         {
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             // Set threads
             multisetToThreads();
             // Start threads
             for (auto& thread : mThreads)
                 thread->startInThread();
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
         }
         catch (const std::exception& e)
         {
@@ -227,16 +227,16 @@ namespace op
     {
         try
         {
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             for (auto& tQueue : mTQueues)
                 tQueue->stop();
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             *spIsRunning = false;
             for (auto& thread : mThreads)
                 thread->stopAndJoin();
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             checkWorkerErrors();
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
         }
         catch (const std::exception& e)
         {

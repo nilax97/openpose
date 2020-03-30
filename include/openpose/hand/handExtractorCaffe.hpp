@@ -1,6 +1,7 @@
 #ifndef OPENPOSE_HAND_HAND_EXTRACTOR_CAFFE_HPP
 #define OPENPOSE_HAND_HAND_EXTRACTOR_CAFFE_HPP
 
+#include <opencv2/core/core.hpp> // cv::Mat
 #include <openpose/core/common.hpp>
 #include <openpose/core/enumClasses.hpp>
 #include <openpose/hand/handExtractorNet.hpp>
@@ -25,9 +26,9 @@ namespace op
          */
         HandExtractorCaffe(const Point<int>& netInputSize, const Point<int>& netOutputSize,
                            const std::string& modelFolder, const int gpuId,
-                           const int numberScales = 1, const float rangeScales = 0.4f,
+                           const unsigned short numberScales = 1, const float rangeScales = 0.4f,
                            const std::vector<HeatMapType>& heatMapTypes = {},
-                           const ScaleMode heatMapScaleMode = ScaleMode::ZeroToOneFixedAspect,
+                           const ScaleMode heatMapScaleMode = ScaleMode::ZeroToOne,
                            const bool enableGoogleLogging = true);
 
         /**
@@ -49,15 +50,18 @@ namespace op
          * elements: index 0 and 1 for left and right hand respectively. Inside each array element, a
          * op::Rectangle<float> (similar to cv::Rect for floating values) with the position of that hand (or 0,0,0,0 if
          * some hand is missing, e.g., if a specific person has only half of the body inside the image).
-         * @param inputData Original image in Mat format and BGR format.
+         * @param cvInputData Original image in cv::Mat format and BGR format.
          */
-        void forwardPass(const std::vector<std::array<Rectangle<float>, 2>> handRectangles, const Matrix& inputData);
+        void forwardPass(const std::vector<std::array<Rectangle<float>, 2>> handRectangles, const cv::Mat& cvInputData);
 
     private:
         // PIMPL idiom
         // http://www.cppsamples.com/common-tasks/pimpl.html
         struct ImplHandExtractorCaffe;
         std::unique_ptr<ImplHandExtractorCaffe> upImpl;
+
+        void detectHandKeypoints(Array<float>& handCurrent, const int person,
+                                 const cv::Mat& affineMatrix);
 
         Array<float> getHeatMapsFromLastPass() const;
 

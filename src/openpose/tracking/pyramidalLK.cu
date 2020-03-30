@@ -1,4 +1,3 @@
-#include <openpose_private/tracking/pyramidalLK.hpp>
 #ifdef WITH_TRACKING
     #include <iostream>
     #include <cuda.h>
@@ -17,6 +16,7 @@
         #define cvCuda cv::cuda
     #endif
 #endif
+#include <openpose/tracking/pyramidalLK.hpp>
 
 // Error codes for kernel caller
 #define IMAGE_SIZES_NEQUAL -1

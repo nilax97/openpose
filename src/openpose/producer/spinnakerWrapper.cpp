@@ -1,8 +1,7 @@
-#include <openpose/producer/spinnakerWrapper.hpp>
+#include <openpose/core/macros.hpp> // OPEN_CV_IS_4_OR_HIGHER
 #include <atomic>
 #include <mutex>
 #include <opencv2/imgproc/imgproc.hpp> // cv::undistort, cv::initUndistortRectifyMap
-#include <openpose_private/utilities/openCvMultiversionHeaders.hpp> // OPEN_CV_IS_4_OR_HIGHER
 #ifdef OPEN_CV_IS_4_OR_HIGHER
     #include <opencv2/calib3d.hpp> // cv::initUndistortRectifyMap for OpenCV 4
 #endif
@@ -10,6 +9,7 @@
     #include <Spinnaker.h>
 #endif
 #include <openpose/3d/cameraParameterReader.hpp>
+#include <openpose/producer/spinnakerWrapper.hpp>
 
 namespace op
 {
@@ -72,7 +72,7 @@ namespace op
             {
                 int result = 0;
 
-                opLog("Printing device information for camera " + std::to_string(camNum) + "...\n", Priority::High);
+                log("Printing device information for camera " + std::to_string(camNum) + "...\n", Priority::High);
 
                 Spinnaker::GenApi::FeatureList_t features;
                 Spinnaker::GenApi::CCategoryPtr cCategoryPtr = iNodeMap.GetNode("DeviceInformation");
@@ -85,13 +85,13 @@ namespace op
                     {
                         Spinnaker::GenApi::CNodePtr pfeatureNode = *it;
                         const auto cValuePtr = (Spinnaker::GenApi::CValuePtr)pfeatureNode;
-                        opLog(pfeatureNode->GetName() + " : " +
+                        log(pfeatureNode->GetName() + " : " +
                                 (IsReadable(cValuePtr) ? cValuePtr->ToString() : "Node not readable"), Priority::High);
                     }
                 }
                 else
-                    opLog("Device control information not available.", Priority::High);
-                opLog(" ", Priority::High);
+                    log("Device control information not available.", Priority::High);
+                log(" ", Priority::High);
 
                 return result;
             }
@@ -135,7 +135,7 @@ namespace op
 
                 ptrTriggerMode->SetIntValue(ptrTriggerModeOff->GetValue());
 
-                // opLog("Trigger mode disabled...", Priority::High);
+                // log("Trigger mode disabled...", Priority::High);
 
                 return result;
             }
@@ -195,9 +195,9 @@ namespace op
             //     std::chrono::high_resolution_clock::now()-begin3
             // ).count() * 1e-6;
             // // Print times
-            // opLog("Time (ms) 1: " + std::to_string(durationMs1 / reps), Priority::High);
-            // opLog("Time (ms) 2: " + std::to_string(durationMs2 / reps), Priority::High);
-            // opLog("Time (ms) 3: " + std::to_string(durationMs3 / reps), Priority::High);
+            // log("Time (ms) 1: " + std::to_string(durationMs1 / reps), Priority::High);
+            // log("Time (ms) 2: " + std::to_string(durationMs2 / reps), Priority::High);
+            // log("Time (ms) 3: " + std::to_string(durationMs3 / reps), Priority::High);
 
             // Return right one
             // ~ 1.3 ms but pixeled
@@ -249,9 +249,9 @@ namespace op
             try
             {
                 int result = 0;
-                opLog("*** CONFIGURING TRIGGER ***", Priority::High);
-                opLog("Configuring trigger...", Priority::High);
-                // opLog("Configuring hardware trigger...", Priority::High);
+                log("*** CONFIGURING TRIGGER ***", Priority::High);
+                log("Configuring trigger...", Priority::High);
+                // log("Configuring hardware trigger...", Priority::High);
                 // Ensure trigger mode off
                 // *** NOTES ***
                 // The trigger must be disabled in order to configure whether the source
@@ -269,7 +269,7 @@ namespace op
 
                 ptrTriggerMode->SetIntValue(ptrTriggerModeOff->GetValue());
 
-                opLog("Trigger mode disabled...", Priority::High);
+                log("Trigger mode disabled...", Priority::High);
 
                 // Select trigger source
                 // *** NOTES ***
@@ -288,7 +288,7 @@ namespace op
                 //     error("Unable to set trigger mode (enum entry retrieval). Aborting...",
                 //               __LINE__, __FUNCTION__, __FILE__);
                 // ptrTriggerSource->SetIntValue(ptrTriggerSourceHardware->GetValue());
-                // opLog("Trigger source set to hardware...", Priority::High);
+                // log("Trigger source set to hardware...", Priority::High);
 
                 // Set trigger mode to sofware
                 Spinnaker::GenApi::CEnumEntryPtr ptrTriggerSourceSoftware = ptrTriggerSource->GetEntryByName("Software");
@@ -297,7 +297,7 @@ namespace op
                     error("Unable to set trigger mode (enum entry retrieval). Aborting...",
                               __LINE__, __FUNCTION__, __FILE__);
                 ptrTriggerSource->SetIntValue(ptrTriggerSourceSoftware->GetValue());
-                // opLog("Trigger source set to source...", Priority::High);
+                // log("Trigger source set to source...", Priority::High);
 
                 // Turn trigger mode on
                 // *** LATER ***
@@ -314,7 +314,7 @@ namespace op
 
                 ptrTriggerMode->SetIntValue(ptrTriggerModeOn->GetValue());
 
-                opLog("Trigger mode turned back on...", Priority::High);
+                log("Trigger mode turned back on...", Priority::High);
 
                 return result;
             }
@@ -413,7 +413,7 @@ namespace op
                         // // http://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html#undistort
                         // cv::undistort(cvMatDistorted, mCvMats[i], cameraIntrinsics, cameraDistorsions);
                         // // In OpenCV 2.4, cv::undistort is exactly equal than cv::initUndistortRectifyMap
-                        // (with CV_16SC2) + cv::remap (with LINEAR). I.e., opLog(cv::norm(cvMatMethod1-cvMatMethod2)) = 0.
+                        // (with CV_16SC2) + cv::remap (with LINEAR). I.e., log(cv::norm(cvMatMethod1-cvMatMethod2)) = 0.
                         // Option b - 15 ms / 3 images (LINEAR) or 25 ms (CUBIC)
                         // Distorsion removal - not required and more expensive (applied to the whole image instead of
                         // only to our interest points)
@@ -487,7 +487,7 @@ namespace op
                             {
                                 if (imagePtr->IsIncomplete())
                                 {
-                                    opLog("Image incomplete with image status " + std::to_string(imagePtr->GetImageStatus())
+                                    log("Image incomplete with image status " + std::to_string(imagePtr->GetImageStatus())
                                         + "...", Priority::High, __LINE__, __FUNCTION__, __FILE__);
                                     imagesExtracted = false;
                                     break;
@@ -510,15 +510,12 @@ namespace op
             }
 
             // This function acquires and displays images from each device.
-            std::vector<Matrix> acquireImages(
-                const std::vector<Matrix>& opCameraIntrinsics,
-                const std::vector<Matrix>& opCameraDistorsions,
-                const int cameraIndex = -1)
+            std::vector<cv::Mat> acquireImages(const std::vector<cv::Mat>& cameraIntrinsics,
+                                               const std::vector<cv::Mat>& cameraDistorsions,
+                                               const int cameraIndex = -1)
             {
                 try
                 {
-                    OP_OP2CVVECTORMAT(cameraIntrinsics, opCameraIntrinsics)
-                    OP_OP2CVVECTORMAT(cameraDistorsions, opCameraDistorsions)
                     // std::vector<cv::Mat> cvMats;
 
                     // Retrieve, convert, and return an image for each camera
@@ -565,7 +562,7 @@ namespace op
                     {
                         if (imagePtr->IsIncomplete())
                         {
-                            opLog("Image incomplete with image status " + std::to_string(imagePtr->GetImageStatus())
+                            log("Image incomplete with image status " + std::to_string(imagePtr->GetImageStatus())
                                 + "...", Priority::High, __LINE__, __FUNCTION__, __FILE__);
                             imagesExtracted = false;
                             break;
@@ -642,8 +639,7 @@ namespace op
                             mCvMats = std::vector<cv::Mat>{mCvMats[cameraIndex]};
                         }
                     }
-                    OP_CV2OPVECTORMAT(opMats, mCvMats)
-                    return opMats;
+                    return mCvMats;
                 }
                 catch (Spinnaker::Exception &e)
                 {
@@ -674,7 +670,7 @@ namespace op
                 upImpl->mInitialized = true;
 
                 // Print application build information
-                opLog(std::string{ "Application build date: " } + __DATE__ + " " + __TIME__, Priority::High);
+                log(std::string{ "Application build date: " } + __DATE__ + " " + __TIME__, Priority::High);
 
                 // Retrieve singleton reference to upImpl->mSystemPtr object
                 upImpl->mSystemPtr = Spinnaker::System::GetInstance();
@@ -684,7 +680,7 @@ namespace op
 
                 const unsigned int numCameras = upImpl->mCameraList.GetSize();
 
-                opLog("Number of cameras detected: " + std::to_string(numCameras), Priority::High);
+                log("Number of cameras detected: " + std::to_string(numCameras), Priority::High);
 
                 // Finish if there are no cameras
                 if (numCameras == 0)
@@ -695,12 +691,12 @@ namespace op
                     // Release upImpl->mSystemPtr
                     upImpl->mSystemPtr->ReleaseInstance();
 
-                    // opLog("Not enough cameras!\nPress Enter to exit...", Priority::High);
+                    // log("Not enough cameras!\nPress Enter to exit...", Priority::High);
                     // getchar();
 
                     error("No cameras detected.", __LINE__, __FUNCTION__, __FILE__);
                 }
-                opLog("Camera system initialized...", Priority::High);
+                log("Camera system initialized...", Priority::High);
 
                 //
                 // Retrieve transport layer nodemaps and print device information for
@@ -712,7 +708,7 @@ namespace op
                 // serial number. Rather than caching the nodemap, each nodemap is
                 // retrieved both times as needed.
                 //
-                opLog("\n*** DEVICE INFORMATION ***\n", Priority::High);
+                log("\n*** DEVICE INFORMATION ***\n", Priority::High);
 
                 for (auto i = 0u; i < upImpl->mCameraList.GetSize(); i++)
                 {
@@ -811,7 +807,7 @@ namespace op
 
                     ptrAcquisitionMode->SetIntValue(acquisitionModeContinuous);
 
-                    opLog("Camera " + std::to_string(i) + " acquisition mode set to continuous...", Priority::High);
+                    log("Camera " + std::to_string(i) + " acquisition mode set to continuous...", Priority::High);
 
                     // Set camera resolution
                     // Retrieve GenICam nodemap
@@ -847,26 +843,26 @@ namespace op
                         // Set width
                         Spinnaker::GenApi::CIntegerPtr ptrHeight = iNodeMap.GetNode("Height");
                         ptrHeight->SetValue(ptrHeightMax->GetValue());
-                        opLog("Choosing maximum resolution for flir camera (" + std::to_string(ptrWidth->GetValue())
+                        log("Choosing maximum resolution for flir camera (" + std::to_string(ptrWidth->GetValue())
                             + " x " + std::to_string(ptrHeight->GetValue()) + ").", Priority::High);
                     }
 
                     // Begin acquiring images
                     cameraPtr->BeginAcquisition();
 
-                    opLog("Camera " + std::to_string(i) + " started acquiring images...", Priority::High);
+                    log("Camera " + std::to_string(i) + " started acquiring images...", Priority::High);
                 }
 
                 // Retrieve device serial number for filename
-                opLog("\nReading (and sorting by) serial numbers...", Priority::High);
+                log("\nReading (and sorting by) serial numbers...", Priority::High);
                 const bool sorted = true;
                 upImpl->mSerialNumbers = getSerialNumbers(upImpl->mCameraList, sorted);
                 const auto& serialNumbers = upImpl->mSerialNumbers;
                 for (auto i = 0u; i < serialNumbers.size(); i++)
-                    opLog("Camera " + std::to_string(i) + " serial number set to "
+                    log("Camera " + std::to_string(i) + " serial number set to "
                         + serialNumbers[i] + "...", Priority::High);
                 if (upImpl->mCameraIndex >= 0)
-                    opLog("Only using camera index " + std::to_string(upImpl->mCameraIndex) + ", i.e., serial number "
+                    log("Only using camera index " + std::to_string(upImpl->mCameraIndex) + ", i.e., serial number "
                         + serialNumbers[upImpl->mCameraIndex] + "...", Priority::High);
 
                 // Read camera parameters from SN
@@ -894,10 +890,10 @@ namespace op
                 if (cvMats.empty())
                     error("Cameras could not be opened.", __LINE__, __FUNCTION__, __FILE__);
                 // Get resolution
-                upImpl->mResolution = Point<int>{cvMats[0].cols(), cvMats[0].rows()};
+                upImpl->mResolution = Point<int>{cvMats[0].cols, cvMats[0].rows};
 
                 const std::string numberCameras = std::to_string(upImpl->mCameraIndex < 0 ? serialNumbers.size() : 1);
-                opLog("\nRunning for " + numberCameras + " out of " + std::to_string(serialNumbers.size())
+                log("\nRunning for " + numberCameras + " out of " + std::to_string(serialNumbers.size())
                     + " camera(s)...\n\n*** IMAGE ACQUISITION ***\n", Priority::High);
             }
             catch (const Spinnaker::Exception& e)
@@ -929,7 +925,7 @@ namespace op
         }
     }
 
-    std::vector<Matrix> SpinnakerWrapper::getRawFrames()
+    std::vector<cv::Mat> SpinnakerWrapper::getRawFrames()
     {
         try
         {
@@ -964,7 +960,7 @@ namespace op
         }
     }
 
-    std::vector<Matrix> SpinnakerWrapper::getCameraMatrices() const
+    std::vector<cv::Mat> SpinnakerWrapper::getCameraMatrices() const
     {
         try
         {
@@ -981,7 +977,7 @@ namespace op
         }
     }
 
-    std::vector<Matrix> SpinnakerWrapper::getCameraExtrinsics() const
+    std::vector<cv::Mat> SpinnakerWrapper::getCameraExtrinsics() const
     {
         try
         {
@@ -998,7 +994,7 @@ namespace op
         }
     }
 
-    std::vector<Matrix> SpinnakerWrapper::getCameraIntrinsics() const
+    std::vector<cv::Mat> SpinnakerWrapper::getCameraIntrinsics() const
     {
         try
         {
@@ -1098,7 +1094,7 @@ namespace op
                         cameraPtr->DeInit();
                     }
 
-                    opLog("FLIR (Point-grey) capture completed. Releasing cameras...", Priority::High);
+                    log("FLIR (Point-grey) capture completed. Releasing cameras...", Priority::High);
 
                     // Clear camera list before releasing upImpl->mSystemPtr
                     upImpl->mCameraList.Clear();
@@ -1109,7 +1105,7 @@ namespace op
                     // Setting the class as released
                     upImpl->mInitialized = false;
 
-                    opLog("Cameras released! Exiting program.", Priority::High);
+                    log("Cameras released! Exiting program.", Priority::High);
                 }
                 else
                 {

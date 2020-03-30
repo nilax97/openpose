@@ -41,9 +41,9 @@ namespace op
     private:
         const std::string mPathName;
 
-        Matrix getRawFrame();
+        cv::Mat getRawFrame();
 
-        std::vector<Matrix> getRawFrames();
+        std::vector<cv::Mat> getRawFrames();
 
         DELETE_COPY(IpCameraReader);
     };

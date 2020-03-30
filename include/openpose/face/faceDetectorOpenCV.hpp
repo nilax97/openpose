@@ -1,6 +1,8 @@
 #ifndef OPENPOSE_FACE_FACE_DETECTOR_OPENCV_HPP
 #define OPENPOSE_FACE_FACE_DETECTOR_OPENCV_HPP
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/objdetect/objdetect.hpp>
 #include <openpose/core/common.hpp>
 
 namespace op
@@ -13,13 +15,10 @@ namespace op
         virtual ~FaceDetectorOpenCV();
 
         // No thread-save
-        std::vector<Rectangle<float>> detectFaces(const Matrix& inputData);
+        std::vector<Rectangle<float>> detectFaces(const cv::Mat& cvInputData);
 
     private:
-        // PIMPL idiom
-        // http://www.cppsamples.com/common-tasks/pimpl.html
-        struct ImplFaceDetectorOpenCV;
-        std::unique_ptr<ImplFaceDetectorOpenCV> upImpl;
+        cv::CascadeClassifier mFaceCascade;
 
         DELETE_COPY(FaceDetectorOpenCV);
     };

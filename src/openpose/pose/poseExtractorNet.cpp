@@ -1,11 +1,10 @@
-#include <openpose/pose/poseExtractorNet.hpp>
-#include <cmath> // std::round
 #ifdef USE_CUDA
     #include <cuda_runtime_api.h>
     #include <openpose/gpu/cuda.hpp>
 #endif
 #include <openpose/core/enumClasses.hpp>
 #include <openpose/utilities/fastMath.hpp>
+#include <openpose/pose/poseExtractorNet.hpp>
 
 namespace op
 {
@@ -57,13 +56,10 @@ namespace op
         try
         {
             // Error check
-            if (mHeatMapScaleMode != ScaleMode::ZeroToOne
-                && mHeatMapScaleMode != ScaleMode::ZeroToOneFixedAspect
-                && mHeatMapScaleMode != ScaleMode::PlusMinusOne
-                && mHeatMapScaleMode != ScaleMode::PlusMinusOneFixedAspect
+            if (mHeatMapScaleMode != ScaleMode::ZeroToOne && mHeatMapScaleMode != ScaleMode::PlusMinusOne
                 && mHeatMapScaleMode != ScaleMode::UnsignedChar && mHeatMapScaleMode != ScaleMode::NoScale)
-                error("The ScaleMode heatMapScaleMode must be ZeroToOne, ZeroToOneFixedAspect, PlusMinusOne,"
-                    " PlusMinusOneFixedAspect or UnsignedChar.", __LINE__, __FUNCTION__, __FILE__);
+                error("The ScaleMode heatMapScaleMode must be ZeroToOne, PlusMinusOne, UnsignedChar, or NoScale.",
+                      __LINE__, __FUNCTION__, __FILE__);
 
             // Properties - Init to 0
             for (auto& property : mProperties)
@@ -139,8 +135,7 @@ namespace op
                     if (mHeatMapScaleMode != ScaleMode::NoScale)
                     {
                         // Change from [0,1] to [-1,1]
-                        if (mHeatMapScaleMode == ScaleMode::PlusMinusOne
-                            || mHeatMapScaleMode == ScaleMode::PlusMinusOneFixedAspect)
+                        if (mHeatMapScaleMode == ScaleMode::PlusMinusOne)
                             for (auto i = 0u ; i < volumeBodyParts ; i++)
                                 heatMaps[i] = fastTruncate(heatMaps[i]) * 2.f - 1.f;
                         // [0, 255]
@@ -172,8 +167,7 @@ namespace op
                         if (mHeatMapScaleMode != ScaleMode::NoScale)
                         {
                             // Change from [0,1] to [-1,1]
-                            if (mHeatMapScaleMode == ScaleMode::PlusMinusOne
-                                || mHeatMapScaleMode == ScaleMode::PlusMinusOneFixedAspect)
+                            if (mHeatMapScaleMode == ScaleMode::PlusMinusOne)
                                 for (auto i = 0u ; i < channelOffset ; i++)
                                     heatMapsPtr[i] = fastTruncate(heatMapsPtr[i]) * 2.f - 1.f;
                             // [0, 255]
@@ -210,8 +204,7 @@ namespace op
                     if (mHeatMapScaleMode != ScaleMode::NoScale)
                     {
                         // Change from [-1,1] to [0,1]. Note that PAFs are in [-1,1]
-                        if (mHeatMapScaleMode == ScaleMode::ZeroToOne
-                            || mHeatMapScaleMode == ScaleMode::ZeroToOneFixedAspect)
+                        if (mHeatMapScaleMode == ScaleMode::ZeroToOne)
                             for (auto i = 0u ; i < volumePAFs ; i++)
                                 heatMapsPtr[i] = fastTruncate(heatMapsPtr[i], -1.f) * 0.5f + 0.5f;
                         // [0, 255]
@@ -341,7 +334,7 @@ namespace op
         try
         {
             auto& propertyElement = mProperties.at((int)property);
-            opLog("Property " + std::to_string((int)property)
+            log("Property " + std::to_string((int)property)
                 + " set from " + std::to_string(propertyElement)
                 + " to " + std::to_string(value), Priority::High);
             propertyElement = {value};

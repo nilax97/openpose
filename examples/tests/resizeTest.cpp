@@ -1,8 +1,6 @@
 // ------------------------- OpenPose Resize Layer Testing -------------------------
 
-// Third-party dependencies
-#include <opencv2/opencv.hpp>
-// Command-line user interface
+// Command-line user intraface
 #define OPENPOSE_FLAGS_DISABLE_POSE
 #include <openpose/flags.hpp>
 // OpenPose dependencies
@@ -79,8 +77,7 @@
         try
         {
             // logging_level
-            op::Matrix opImg = op::loadImage(FLAGS_image_path, CV_LOAD_IMAGE_GRAYSCALE);
-            cv::Mat img = OP_OP2CVMAT(opImg);
+            cv::Mat img = op::loadImage(FLAGS_image_path, CV_LOAD_IMAGE_GRAYSCALE);
             if(img.empty())
                 op::error("Could not open or find the image: " + FLAGS_image_path, __LINE__, __FUNCTION__, __FILE__);
             img.convertTo(img, CV_32FC1);
@@ -92,7 +89,7 @@
             cv::imshow("gpuImg", gpuImg);
             cv::imshow("cpuImg", cpuImg);
 
-            op::opLog("Done");
+            op::log("Done");
             cv::waitKey(0);
 
             return 0;

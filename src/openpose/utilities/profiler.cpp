@@ -1,7 +1,7 @@
-#include <openpose/utilities/profiler.hpp>
 #include <map>
 #include <mutex>
 #include <openpose/utilities/errorAndLog.hpp>
+#include <openpose/utilities/profiler.hpp>
 
 // First, I apologize for the ugliness of the code of this function. Nevertheless, it has been made
 // in this way so that it has no computational impact at all if PROFILER_ENABLED is not defined.
@@ -46,7 +46,7 @@ namespace op
         try
         {
             const auto message = firstMessage + std::to_string(getTimeSeconds(timerInit)) + secondMessage;
-            op::opLog(message, priority);
+            op::log(message, priority);
         }
         catch (const std::exception& e)
         {
@@ -70,7 +70,7 @@ namespace op
                                        const std::string& function, const std::string& file)
         {
             const auto stringMessage = std::to_string(   timePast / timeCounter / 1e6   ) + " msec";
-            opLog(stringMessage, Priority::Max, line, function, file);
+            log(stringMessage, Priority::Max, line, function, file);
         }
     #endif
 
@@ -189,13 +189,13 @@ namespace op
     {
         #ifdef PROFILER_ENABLED
             // Print line-function-file info
-            opLog("GPU usage.", Priority::Max, line, function, file);
+            log("GPU usage.", Priority::Max, line, function, file);
 
             // GPU info
             const auto nvidiaCommand = std::system("nvidia-smi | grep \"Processes:\"")
                                      | std::system("nvidia-smi | grep \"Process name\"");
             if (nvidiaCommand != 0)
-                opLog("Error on the nvidia-smi header. Please, inform us of this error.", Priority::Max);
+                log("Error on the nvidia-smi header. Please, inform us of this error.", Priority::Max);
             else
             {
                 // Print GPU usage or empty otherwise
@@ -203,9 +203,9 @@ namespace op
                 const std::string getGpuMemoryCommand{"nvidia-smi | grep \"" + file.substr(0, file.size() - 3) + "\""};
                 const auto answer = std::system(getGpuMemoryCommand.c_str());
                 if (answer == 256)
-                    opLog("Not used at all.", Priority::Max);
+                    log("Not used at all.", Priority::Max);
                 else if (answer != 0)
-                    opLog("Bash error: " + std::to_string(answer), Priority::Max);
+                    log("Bash error: " + std::to_string(answer), Priority::Max);
             }
         #else
             UNUSED(line);

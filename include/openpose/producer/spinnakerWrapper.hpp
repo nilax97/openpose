@@ -21,17 +21,17 @@ namespace op
 
         virtual ~SpinnakerWrapper();
 
-        std::vector<Matrix> getRawFrames();
+        std::vector<cv::Mat> getRawFrames();
 
         /**
          * Note: The camera parameters are only read if undistortImage is true. This should be changed to add a
          * new bool flag in the constructor, e.g., readCameraParameters
          */
-        std::vector<Matrix> getCameraMatrices() const;
+        std::vector<cv::Mat> getCameraMatrices() const;
 
-        std::vector<Matrix> getCameraExtrinsics() const;
+        std::vector<cv::Mat> getCameraExtrinsics() const;
 
-        std::vector<Matrix> getCameraIntrinsics() const;
+        std::vector<cv::Mat> getCameraIntrinsics() const;
 
         Point<int> getResolution() const;
 

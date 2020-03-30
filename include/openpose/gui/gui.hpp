@@ -2,6 +2,7 @@
 #define OPENPOSE_GUI_GUI_HPP
 
 #include <atomic>
+#include <opencv2/core/core.hpp> // cv::Mat
 #include <openpose/core/common.hpp>
 #include <openpose/core/renderer.hpp>
 #include <openpose/gui/frameDisplayer.hpp>
@@ -27,9 +28,9 @@ namespace op
 
         virtual void initializationOnThread();
 
-        void setImage(const Matrix& cvMatOutput);
+        void setImage(const cv::Mat& cvMatOutput);
 
-        void setImage(const std::vector<Matrix>& cvMatOutputs);
+        void setImage(const std::vector<cv::Mat>& cvMatOutputs);
 
         virtual void update();
 

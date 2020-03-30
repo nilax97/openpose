@@ -59,7 +59,7 @@ namespace op
             if (checkNoNullNorEmpty(tDatums))
             {
                 // Debugging log
-                opLogIfDebug("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+                dLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
                 // T* to T
                 auto& tDatumsNoPtr = *tDatums;
                 // Profiling speed
@@ -72,7 +72,7 @@ namespace op
                 Profiler::timerEnd(profilerKey);
                 Profiler::printAveragedTimeMsOnIterationX(profilerKey, __LINE__, __FUNCTION__, __FILE__);
                 // Debugging log
-                opLogIfDebug("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+                dLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             }
         }
         catch (const std::exception& e)

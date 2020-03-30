@@ -1,7 +1,6 @@
-#include <openpose/producer/flirReader.hpp>
 #include <openpose/utilities/fastMath.hpp>
 #include <openpose/utilities/string.hpp>
-#include <openpose_private/utilities/openCvMultiversionHeaders.hpp>
+#include <openpose/producer/flirReader.hpp>
 
 namespace op
 {
@@ -37,7 +36,7 @@ namespace op
         }
     }
 
-    std::vector<Matrix> FlirReader::getCameraMatrices()
+    std::vector<cv::Mat> FlirReader::getCameraMatrices()
     {
         try
         {
@@ -50,7 +49,7 @@ namespace op
         }
     }
 
-    std::vector<Matrix> FlirReader::getCameraExtrinsics()
+    std::vector<cv::Mat> FlirReader::getCameraExtrinsics()
     {
         try
         {
@@ -63,7 +62,7 @@ namespace op
         }
     }
 
-    std::vector<Matrix> FlirReader::getCameraIntrinsics()
+    std::vector<cv::Mat> FlirReader::getCameraIntrinsics()
     {
         try
         {
@@ -115,7 +114,7 @@ namespace op
         }
     }
 
-    Matrix FlirReader::getRawFrame()
+    cv::Mat FlirReader::getRawFrame()
     {
         try
         {
@@ -124,11 +123,11 @@ namespace op
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return Matrix();
+            return cv::Mat();
         }
     }
 
-    std::vector<Matrix> FlirReader::getRawFrames()
+    std::vector<cv::Mat> FlirReader::getRawFrames()
     {
         try
         {
@@ -170,7 +169,7 @@ namespace op
                 return -1.;
             else
             {
-                opLog("Unknown property.", Priority::Max, __LINE__, __FUNCTION__, __FILE__);
+                log("Unknown property.", Priority::Max, __LINE__, __FUNCTION__, __FILE__);
                 return -1.;
             }
         }
@@ -190,11 +189,11 @@ namespace op
             else if (capProperty == CV_CAP_PROP_FRAME_HEIGHT)
                 mResolution.y = {(int)value};
             else if (capProperty == CV_CAP_PROP_POS_FRAMES)
-                opLog("This property is read-only.", Priority::Max, __LINE__, __FUNCTION__, __FILE__);
+                log("This property is read-only.", Priority::Max, __LINE__, __FUNCTION__, __FILE__);
             else if (capProperty == CV_CAP_PROP_FRAME_COUNT || capProperty == CV_CAP_PROP_FPS)
-                opLog("This property is read-only.", Priority::Max, __LINE__, __FUNCTION__, __FILE__);
+                log("This property is read-only.", Priority::Max, __LINE__, __FUNCTION__, __FILE__);
             else
-                opLog("Unknown property.", Priority::Max, __LINE__, __FUNCTION__, __FILE__);
+                log("Unknown property.", Priority::Max, __LINE__, __FUNCTION__, __FILE__);
         }
         catch (const std::exception& e)
         {

@@ -90,9 +90,9 @@ namespace op
     {
         try
         {
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             stopAndJoin();
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
         }
         catch (const std::exception& e)
         {
@@ -134,7 +134,7 @@ namespace op
     {
         try
         {
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             stopAndJoin();
             *spIsRunning = {true};
             mThread = {std::thread{&Thread::threadFunction, this}};
@@ -164,7 +164,7 @@ namespace op
     {
         try
         {
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             for (auto& subThread : mSubThreads)
                 subThread->initializationOnThread();
         }
@@ -179,10 +179,10 @@ namespace op
     {
         try
         {
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             initializationOnThread();
 
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             while (isRunning())
             {
                 bool allSubThreadsClosed = true;
@@ -191,12 +191,12 @@ namespace op
 
                 if (allSubThreadsClosed)
                 {
-                    opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+                    log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
                     stop();
                     break;
                 }
             }
-            opLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+            log("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
         }
         catch (const std::exception& e)
         {

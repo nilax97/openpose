@@ -1,10 +1,10 @@
-#include <openpose/filestream/fileStream.hpp>
 #include <fstream> // std::ifstream, std::ofstream
 #include <opencv2/highgui/highgui.hpp> // cv::imread
 #include <openpose/utilities/fastMath.hpp>
 #include <openpose/utilities/fileSystem.hpp>
 #include <openpose/utilities/string.hpp>
 #include <openpose/filestream/jsonOfstream.hpp>
+#include <openpose/filestream/fileStream.hpp>
 
 namespace op
 {
@@ -205,12 +205,11 @@ namespace op
         }
     }
 
-    void saveData(const std::vector<Matrix>& opMats, const std::vector<std::string>& cvMatNames,
+    void saveData(const std::vector<cv::Mat>& cvMats, const std::vector<std::string>& cvMatNames,
                   const std::string& fileNameNoExtension, const DataFormat dataFormat)
     {
         try
         {
-            OP_OP2CVVECTORMAT(cvMats, opMats)
             // Sanity checks
             if (dataFormat == DataFormat::Json && CV_MAJOR_VERSION < 3)
                 error(errorMessage, __LINE__, __FUNCTION__, __FILE__);
@@ -230,12 +229,12 @@ namespace op
         }
     }
 
-    void saveData(const Matrix& opMat, const std::string cvMatName, const std::string& fileNameNoExtension,
+    void saveData(const cv::Mat& cvMat, const std::string cvMatName, const std::string& fileNameNoExtension,
                   const DataFormat dataFormat)
     {
         try
         {
-            saveData(std::vector<Matrix>{opMat}, std::vector<std::string>{cvMatName}, fileNameNoExtension,
+            saveData(std::vector<cv::Mat>{cvMat}, std::vector<std::string>{cvMatName}, fileNameNoExtension,
                      dataFormat);
         }
         catch (const std::exception& e)
@@ -244,7 +243,7 @@ namespace op
         }
     }
 
-    std::vector<Matrix> loadData(const std::vector<std::string>& cvMatNames, const std::string& fileNameNoExtension,
+    std::vector<cv::Mat> loadData(const std::vector<std::string>& cvMatNames, const std::string& fileNameNoExtension,
                                   const DataFormat dataFormat)
     {
         try
@@ -263,8 +262,7 @@ namespace op
             for (auto i = 0u ; i < cvMats.size() ; i++)
                 fileStorage[cvMatNames[i]] >> cvMats[i];
             fileStorage.release();
-            OP_CV2OPVECTORMAT(opMats, cvMats)
-            return opMats;
+            return cvMats;
         }
         catch (const std::exception& e)
         {
@@ -273,16 +271,16 @@ namespace op
         }
     }
 
-    Matrix loadData(const std::string& cvMatName, const std::string& fileNameNoExtension, const DataFormat dataFormat)
+    cv::Mat loadData(const std::string& cvMatName, const std::string& fileNameNoExtension, const DataFormat dataFormat)
     {
         try
         {
-            return OP_CV2OPMAT(loadData(std::vector<std::string>{cvMatName}, fileNameNoExtension, dataFormat)[0]);
+            return loadData(std::vector<std::string>{cvMatName}, fileNameNoExtension, dataFormat)[0];
         }
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return Matrix();
+            return {};
         }
     }
 
@@ -343,12 +341,11 @@ namespace op
         }
     }
 
-    void saveImage(const Matrix& matrix, const std::string& fullFilePath,
+    void saveImage(const cv::Mat& cvMat, const std::string& fullFilePath,
                    const std::vector<int>& openCvCompressionParams)
     {
         try
         {
-            const cv::Mat cvMat = OP_OP2CVCONSTMAT(matrix);
             if (!cv::imwrite(fullFilePath, cvMat, openCvCompressionParams))
                 error("Image could not be saved on " + fullFilePath + ".", __LINE__, __FUNCTION__, __FILE__);
         }
@@ -358,19 +355,19 @@ namespace op
         }
     }
 
-    Matrix loadImage(const std::string& fullFilePath, const int openCvFlags)
+    cv::Mat loadImage(const std::string& fullFilePath, const int openCvFlags)
     {
         try
         {
             cv::Mat cvMat = cv::imread(fullFilePath, openCvFlags);
             if (cvMat.empty())
-                opLog("Empty image on path: " + fullFilePath + ".", Priority::Max, __LINE__, __FUNCTION__, __FILE__);
-            return OP_CV2OPMAT(cvMat);
+                log("Empty image on path: " + fullFilePath + ".", Priority::Max, __LINE__, __FUNCTION__, __FILE__);
+            return cvMat;
         }
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return Matrix();
+            return cv::Mat();
         }
     }
 

@@ -1,22 +1,15 @@
-#include <openpose/face/faceDetectorOpenCV.hpp>
-#include <opencv2/objdetect/objdetect.hpp> // cv::CascadeClassifier
+#include <opencv2/imgproc/imgproc.hpp> // cv::COLOR_BGR2GRAY
 #include <openpose/pose/poseParameters.hpp>
-#include <openpose_private/utilities/openCvMultiversionHeaders.hpp>
+#include <openpose/face/faceDetectorOpenCV.hpp>
 
 namespace op
 {
-    struct FaceDetectorOpenCV::ImplFaceDetectorOpenCV
-    {
-        cv::CascadeClassifier mFaceCascade;
-    };
-
-    FaceDetectorOpenCV::FaceDetectorOpenCV(const std::string& modelFolder) :
-        upImpl{new ImplFaceDetectorOpenCV{}}
+    FaceDetectorOpenCV::FaceDetectorOpenCV(const std::string& modelFolder)
     {
         try
         {
             const std::string faceDetectorModelPath{modelFolder + "face/haarcascade_frontalface_alt.xml"};
-            if (!upImpl->mFaceCascade.load(faceDetectorModelPath))
+            if (!mFaceCascade.load(faceDetectorModelPath))
                 error("Face detector model not found at: " + faceDetectorModelPath, __LINE__, __FUNCTION__, __FILE__);
         }
         catch (const std::exception& e)
@@ -29,11 +22,10 @@ namespace op
     {
     }
 
-    std::vector<Rectangle<float>> FaceDetectorOpenCV::detectFaces(const Matrix& inputData)
+    std::vector<Rectangle<float>> FaceDetectorOpenCV::detectFaces(const cv::Mat& cvInputData)
     {
         try
         {
-            cv::Mat cvInputData = OP_OP2CVCONSTMAT(inputData);
             // Image to grey and pyrDown
             cv::Mat frameGray;
             cv::cvtColor(cvInputData, frameGray, cv::COLOR_BGR2GRAY);
@@ -46,7 +38,7 @@ namespace op
             // Face detection - Example from:
             // http://docs.opencv.org/2.4/doc/tutorials/objdetect/cascade_classifier/cascade_classifier.html
             std::vector<cv::Rect> detectedFaces;
-            upImpl->mFaceCascade.detectMultiScale(frameGray, detectedFaces, 1.2, 3, 0|CV_HAAR_SCALE_IMAGE);
+            mFaceCascade.detectMultiScale(frameGray, detectedFaces, 1.2, 3, 0|CV_HAAR_SCALE_IMAGE);
             // Rescale rectangles
             std::vector<Rectangle<float>> faceRectangles(detectedFaces.size());
             for(auto i = 0u; i < detectedFaces.size(); i++)

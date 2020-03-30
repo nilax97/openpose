@@ -1,10 +1,10 @@
-#include <openpose/utilities/errorAndLog.hpp>
 #include <atomic>
 #include <mutex>
 #include <ctime> // std::tm, std::time_t
 #include <fstream> // std::ifstream, std::ofstream
 #include <iostream> // std::cout, std::endl
 #include <stdexcept> // std::runtime_error
+#include <openpose/utilities/errorAndLog.hpp>
 
 namespace op
 {
@@ -48,7 +48,7 @@ namespace op
                 #endif
             }
 
-            void opLog(const std::string& message) { DebugInUnity(message, 0); }
+            void log(const std::string& message) { DebugInUnity(message, 0); }
             void logWarning(const std::string& message) { DebugInUnity(message, 1); }
             void logError(const std::string& message) { DebugInUnity(message, -1); }
         }
@@ -295,9 +295,8 @@ namespace op
         errorAux(3, message, line, function, file);
     }
 
-    void opLog(
-        const std::string& message, const Priority priority, const int line, const std::string& function,
-        const std::string& file)
+    void log(const std::string& message, const Priority priority, const int line, const std::string& function,
+             const std::string& file)
     {
         if (priority >= ConfigureLog::getPriorityThreshold())
         {
@@ -313,7 +312,7 @@ namespace op
 
             // Unity log
             #ifdef USE_UNITY_SUPPORT
-                UnityDebugger::opLog(infoMessage);
+                UnityDebugger::log(infoMessage);
             #endif
         }
     }

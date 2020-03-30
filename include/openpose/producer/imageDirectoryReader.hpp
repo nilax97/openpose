@@ -51,9 +51,9 @@ namespace op
         Point<int> mResolution;
         long long mFrameNameCounter;
 
-        Matrix getRawFrame();
+        cv::Mat getRawFrame();
 
-        std::vector<Matrix> getRawFrames();
+        std::vector<cv::Mat> getRawFrames();
 
         DELETE_COPY(ImageDirectoryReader);
     };

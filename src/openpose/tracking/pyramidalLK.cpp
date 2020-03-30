@@ -1,4 +1,3 @@
-#include <openpose_private/tracking/pyramidalLK.hpp>
 #ifdef WITH_SSE4
     #include <emmintrin.h>
     #include "smmintrin.h"
@@ -13,6 +12,7 @@
 #include <opencv2/imgproc/imgproc.hpp> // cv::pyrDown
 #include <opencv2/video/video.hpp> // cv::buildOpticalFlowPyramid
 #include <openpose/utilities/profiler.hpp>
+#include <openpose/tracking/pyramidalLK.hpp>
 
 //#define DEBUG
 // #ifdef DEBUG
@@ -67,36 +67,37 @@ namespace op
     }
 #endif
 
-// Function aligned_alloc requires C++17 in VS
-#if defined (WITH_AVX) && !defined (_WIN32)
+#ifdef WITH_AVX
+
     float avx_dot_product(std::vector<float> &av, std::vector<float> &bv)
     {
-        /* Get SIMD-vector pointers to the start of each vector */
-        const size_t niters = av.size() / 8;
 
-        float *a = (float *)aligned_alloc(32, av.size() * sizeof(float));
-        float *b = (float *)aligned_alloc(32, av.size() * sizeof(float));
-        memcpy(a, &av[0], av.size() * sizeof(float));
-        memcpy(b, &bv[0], bv.size() * sizeof(float));
+      /* Get SIMD-vector pointers to the start of each vector */
+      unsigned int niters = av.size() / 8;
 
-        __m256 *ptrA = (__m256*) &a[0], *ptrB = (__m256*) &b[0];
-        __m256 res = _mm256_set1_ps(0.0);
+      float *a = (float *) aligned_alloc(32, av.size()*sizeof(float));
+      float *b = (float *) aligned_alloc(32, av.size()*sizeof(float));
+      memcpy(a,&av[0],av.size()*sizeof(float));
+      memcpy(b,&bv[0],bv.size()*sizeof(float));
 
-        for (size_t i = 0; i < niters; i++, ptrA++, ptrB++)
-            res = _mm256_add_ps(_mm256_dp_ps(*ptrA, *ptrB, 255), res);
+      __m256 *ptrA = (__m256*) &a[0], *ptrB = (__m256*) &b[0];
+      __m256 res = _mm256_set1_ps(0.0);
 
-        /* Get result back from the SIMD vector */
-        float fres[8];
-        _mm256_storeu_ps(fres, res);
-        const size_t q = 8 * niters;
+      for (unsigned int i = 0; i < niters; i++, ptrA++,ptrB++)
+        res = _mm256_add_ps(_mm256_dp_ps(*ptrA, *ptrB, 255), res);
 
-        for (size_t i = 0; i < av.size() % 8; i++)
-            fres[0] += (a[i + q] * b[i + q]);
+      /* Get result back from the SIMD vector */
+      float fres[8];
+      _mm256_storeu_ps (fres, res);
+      int q = 8 * niters;
 
-        free(a);
-        free(b);
+      for (unsigned int i = 0; i < av.size() % 8; i++)
+        fres[0] += (a[i+q]*b[i+q]);
 
-        return fres[0] + fres[4];
+      free(a);
+      free(b);
+
+      return fres[0] + fres[4];
     }
 #endif
 
@@ -106,31 +107,32 @@ namespace op
         try
         {
             // Calculate sums
-#if defined (WITH_AVX) && !defined (_WIN32)
-            const float sumXX = avx_dot_product(ix,ix);
-            const float sumYY = avx_dot_product(iy,iy);
-            const float sumXY = avx_dot_product(ix,iy);
-            const float sumXT = avx_dot_product(ix,it);
-            const float sumYT = avx_dot_product(iy,it);
-#elif defined (WITH_SSE4)
-            const float sumXX = sse_dot_product(ix,ix);
-            const float sumYY = sse_dot_product(iy,iy);
-            const float sumXY = sse_dot_product(ix,iy);
-            const float sumXT = sse_dot_product(ix,it);
-            const float sumYT = sse_dot_product(iy,it);
-#else
             auto sumXX = 0.f;
             auto sumYY = 0.f;
             auto sumXT = 0.f;
             auto sumYT = 0.f;
             auto sumXY = 0.f;
+
+#ifdef WITH_AVX
+            sumXX = avx_dot_product(ix,ix);
+            sumYY = avx_dot_product(iy,iy);
+            sumXY = avx_dot_product(ix,iy);
+            sumXT = avx_dot_product(ix,it);
+            sumYT = avx_dot_product(iy,it);
+#elif defined (WITH_SSE4)
+            sumXX = sse_dot_product(ix,ix);
+            sumYY = sse_dot_product(iy,iy);
+            sumXY = sse_dot_product(ix,iy);
+            sumXT = sse_dot_product(ix,it);
+            sumYT = sse_dot_product(iy,it);
+#else
             for (auto i = 0u; i < ix.size(); i++)
             {
-                sumXX += ix[i] * ix[i];
-                sumYY += iy[i] * iy[i];
-                sumXY += ix[i] * iy[i];
-                sumXT += ix[i] * it[i];
-                sumYT += iy[i] * it[i];
+              sumXX += ix[i] * ix[i];
+              sumYY += iy[i] * iy[i];
+              sumXY += ix[i] * iy[i];
+              sumXT += ix[i] * it[i];
+              sumYT += iy[i] * it[i];
             }
 #endif
 

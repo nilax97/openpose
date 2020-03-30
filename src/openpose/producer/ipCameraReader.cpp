@@ -30,7 +30,7 @@ namespace op
         }
     }
 
-    Matrix IpCameraReader::getRawFrame()
+    cv::Mat IpCameraReader::getRawFrame()
     {
         try
         {
@@ -39,11 +39,11 @@ namespace op
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return Matrix();
+            return cv::Mat();
         }
     }
 
-    std::vector<Matrix> IpCameraReader::getRawFrames()
+    std::vector<cv::Mat> IpCameraReader::getRawFrames()
     {
         try
         {

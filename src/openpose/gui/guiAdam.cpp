@@ -1,5 +1,4 @@
 #ifdef USE_3D_ADAM_MODEL
-#include <openpose/gui/guiAdam.hpp>
 #ifdef USE_3D_ADAM_MODEL
     #include <adam/KinematicModel.h>
     #include <adam/Renderer.h>
@@ -9,6 +8,7 @@
 #endif
 #include <openpose/3d/jointAngleEstimation.hpp>
 #include <openpose/filestream/videoSaver.hpp>
+#include <openpose/gui/guiAdam.hpp>
 
 namespace op
 {
@@ -275,7 +275,7 @@ namespace op
     void GuiAdam::update()
     {
         try
-        {
+        {   
             // 2-D rendering
             if (mDisplayMode == DisplayMode::DisplayAll || mDisplayMode == DisplayMode::Display2D)
                 Gui::update();

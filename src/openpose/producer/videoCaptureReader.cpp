@@ -1,30 +1,14 @@
-#include <openpose/producer/videoCaptureReader.hpp>
 #include <iostream>
 #include <openpose/utilities/fastMath.hpp>
 #include <openpose/utilities/string.hpp>
-#include <openpose_private/utilities/openCvMultiversionHeaders.hpp>
+#include <openpose/producer/videoCaptureReader.hpp>
 
 namespace op
 {
-    struct VideoCaptureReader::ImplVideoCaptureReader
-    {
-        cv::VideoCapture mVideoCapture;
-
-        ImplVideoCaptureReader()
-        {
-        }
-
-        ImplVideoCaptureReader(const std::string& path) :
-            mVideoCapture{path}
-        {
-        }
-    };
-
     VideoCaptureReader::VideoCaptureReader(const int index, const bool throwExceptionIfNoOpened,
                                            const std::string& cameraParameterPath, const bool undistortImage,
                                            const int numberViews) :
-        Producer{ProducerType::Webcam, cameraParameterPath, undistortImage, numberViews},
-        upImpl{new ImplVideoCaptureReader{}}
+        Producer{ProducerType::Webcam, cameraParameterPath, undistortImage, numberViews}
     {
         try
         {
@@ -40,7 +24,7 @@ namespace op
                                            const std::string& cameraParameterPath, const bool undistortImage,
                                            const int numberViews) :
         Producer{producerType, cameraParameterPath, undistortImage, numberViews},
-        upImpl{new ImplVideoCaptureReader{path}}
+        mVideoCapture{path}
     {
         try
         {
@@ -89,7 +73,7 @@ namespace op
     {
         try
         {
-            return upImpl->mVideoCapture.isOpened();
+            return mVideoCapture.isOpened();
         }
         catch (const std::exception& e)
         {
@@ -98,44 +82,43 @@ namespace op
         }
     }
 
-    Matrix VideoCaptureReader::getRawFrame()
+    cv::Mat VideoCaptureReader::getRawFrame()
     {
         try
         {
             // Get frame
             cv::Mat frame;
-            upImpl->mVideoCapture >> frame;
+            mVideoCapture >> frame;
             // Skip frames if frame step > 1
             const auto frameStep = Producer::get(ProducerProperty::FrameStep);
             if (frameStep > 1 && !frame.empty() && get(CV_CAP_PROP_POS_FRAMES) < get(CV_CAP_PROP_FRAME_COUNT)-1)
             {
                 // Close if end of video
                 if (get(CV_CAP_PROP_POS_FRAMES) + frameStep-1 >= get(CV_CAP_PROP_FRAME_COUNT))
-                    upImpl->mVideoCapture.release();
+                    mVideoCapture.release();
                 // Frame step usually more efficient if just reading sequentially
                 else if (frameStep < 51)
                     for (auto i = 1 ; i < frameStep ; i++)
-                        upImpl->mVideoCapture >> frame;
+                        mVideoCapture >> frame;
                 // Using set(CV_CAP_PROP_POS_FRAMES, value) is efficient only if step is big
                 else
                     set(CV_CAP_PROP_POS_FRAMES, get(CV_CAP_PROP_POS_FRAMES) + frameStep-1);
             }
             // Return frame
-            Matrix opFrame = OP_CV2OPMAT(frame);
-            return opFrame;
+            return frame;
         }
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return Matrix();
+            return cv::Mat();
         }
     }
 
-    std::vector<Matrix> VideoCaptureReader::getRawFrames()
+    std::vector<cv::Mat> VideoCaptureReader::getRawFrames()
     {
         try
         {
-            return std::vector<Matrix>{getRawFrame()};
+            return std::vector<cv::Mat>{getRawFrame()};
         }
         catch (const std::exception& e)
         {
@@ -149,7 +132,7 @@ namespace op
         try
         {
             // Open webcam
-            upImpl->mVideoCapture = cv::VideoCapture{index};
+            mVideoCapture = cv::VideoCapture{index};
             // Make sure video capture was opened
             if (throwExceptionIfNoOpened && !isOpened())
                 error("VideoCapture (webcam) could not be opened.", __LINE__, __FUNCTION__, __FILE__);
@@ -164,10 +147,10 @@ namespace op
     {
         try
         {
-            if (upImpl->mVideoCapture.isOpened())
+            if (mVideoCapture.isOpened())
             {
-                upImpl->mVideoCapture.release();
-                opLog("cv::VideoCapture released.", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+                mVideoCapture.release();
+                log("cv::VideoCapture released.", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             }
         }
         catch (const std::exception& e)
@@ -187,13 +170,13 @@ namespace op
                     && Producer::get(ProducerProperty::Rotation) != 180.))
             {
                 if (capProperty == CV_CAP_PROP_FRAME_WIDTH)
-                    return upImpl->mVideoCapture.get(CV_CAP_PROP_FRAME_HEIGHT);
+                    return mVideoCapture.get(CV_CAP_PROP_FRAME_HEIGHT);
                 else
-                    return upImpl->mVideoCapture.get(CV_CAP_PROP_FRAME_WIDTH);
+                    return mVideoCapture.get(CV_CAP_PROP_FRAME_WIDTH);
             }
 
             // Generic cases
-            return upImpl->mVideoCapture.get(capProperty);
+            return mVideoCapture.get(capProperty);
         }
         catch (const std::exception& e)
         {
@@ -206,7 +189,7 @@ namespace op
     {
         try
         {
-            upImpl->mVideoCapture.set(capProperty, value);
+            mVideoCapture.set(capProperty, value);
         }
         catch (const std::exception& e)
         {

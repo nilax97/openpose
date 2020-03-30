@@ -77,29 +77,29 @@ namespace op
 
     // Printing info - How to use:
         // It will print info if desiredPriority >= sPriorityThreshold
-        // opLog(message, desiredPriority, __LINE__, __FUNCTION__, __FILE__);
-    OP_API void opLog(
+        // log(message, desiredPriority, __LINE__, __FUNCTION__, __FILE__);
+    OP_API void log(
         const std::string& message, const Priority priority = Priority::Max, const int line = -1,
         const std::string& function = "", const std::string& file = "");
 
     template<typename T>
-    inline void opLog(
+    inline void log(
         const T& message, const Priority priority = Priority::Max, const int line = -1,
         const std::string& function = "", const std::string& file = "")
     {
-        opLog(tToString(message), priority, line, function, file);
+        log(tToString(message), priority, line, function, file);
     }
 
     // If only desired on debug mode (no computational cost at all on release mode):
         // It will print info if desiredPriority >= sPriorityThreshold
-        // opLogIfDebug(message, desiredPriority, __LINE__, __FUNCTION__, __FILE__);
+        // dLog(message, desiredPriority, __LINE__, __FUNCTION__, __FILE__);
     template<typename T>
-    inline void opLogIfDebug(
+    inline void dLog(
         const T& message, const Priority priority = Priority::Max, const int line = -1,
         const std::string& function = "", const std::string& file = "")
     {
         #ifndef NDEBUG
-            opLog(message, priority, line, function, file);
+            log(message, priority, line, function, file);
         #else
             UNUSED(message);
             UNUSED(priority);

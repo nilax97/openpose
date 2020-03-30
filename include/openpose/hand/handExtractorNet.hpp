@@ -2,6 +2,7 @@
 #define OPENPOSE_HAND_HAND_EXTRACTOR_HPP
 
 #include <atomic>
+#include <opencv2/core/core.hpp> // cv::Mat
 #include <openpose/core/common.hpp>
 #include <openpose/core/enumClasses.hpp>
 
@@ -22,9 +23,9 @@ namespace op
          * @param rangeScales The range between the smaller and bigger scale.
          */
         explicit HandExtractorNet(const Point<int>& netInputSize, const Point<int>& netOutputSize,
-                                  const int numberScales = 1, const float rangeScales = 0.4f,
+                                  const unsigned short numberScales = 1, const float rangeScales = 0.4f,
                                   const std::vector<HeatMapType>& heatMapTypes = {},
-                                  const ScaleMode heatMapScaleMode = ScaleMode::ZeroToOneFixedAspect);
+                                  const ScaleMode heatMapScaleMode = ScaleMode::ZeroToOne);
 
         /**
          * Virtual destructor of the HandExtractorNet class.
@@ -45,10 +46,10 @@ namespace op
          * elements: index 0 and 1 for left and right hand respectively. Inside each array element, a
          * op::Rectangle<float> (similar to cv::Rect for floating values) with the position of that hand (or 0,0,0,0 if
          * some hand is missing, e.g., if a specific person has only half of the body inside the image).
-         * @param cvInputData Original image in Mat format and BGR format.
+         * @param cvInputData Original image in cv::Mat format and BGR format.
          */
         virtual void forwardPass(const std::vector<std::array<Rectangle<float>, 2>> handRectangles,
-                                 const Matrix& cvInputData) = 0;
+                                 const cv::Mat& cvInputData) = 0;
 
         std::array<Array<float>, 2> getHeatMaps() const;
 
@@ -66,7 +67,7 @@ namespace op
         void setEnabled(const bool enabled);
 
     protected:
-        const std::pair<int, float> mMultiScaleNumberAndRange;
+        const std::pair<unsigned short, float> mMultiScaleNumberAndRange;
         const Point<int> mNetOutputSize;
         Array<float> mHandImageCrop;
         std::array<Array<float>, 2> mHandKeypoints;

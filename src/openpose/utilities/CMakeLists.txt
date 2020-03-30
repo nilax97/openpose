@@ -4,7 +4,6 @@ set(SOURCES_OP_UTILITIES
     flagsToOpenPose.cpp
     keypoint.cpp
     openCv.cpp
-    openCvPrivate.cpp
     profiler.cpp
     string.cpp)
 

@@ -8,9 +8,7 @@
     // 1. `core` module: for the Datum struct that the `thread` module sends between the queues
     // 2. `utilities` module: for the error & logging functions, i.e., op::error & op::log respectively
 
-// Third-party dependencies
-#include <opencv2/opencv.hpp>
-// Command-line user interface
+// Command-line user intraface
 #include <openpose/flags.hpp>
 // OpenPose dependencies
 #include <openpose/headers.hpp>
@@ -35,18 +33,13 @@ public:
             // User's processing here
                 // datumPtr->cvInputData: initial cv::Mat obtained from the frames producer (video, webcam, etc.)
                 // datumPtr->cvOutputData: final cv::Mat to be displayed
-            if (datumsPtr != nullptr && !datumsPtr->empty())
-            {
+            if (datumsPtr != nullptr)
                 for (auto& datumPtr : *datumsPtr)
-                {
-                    cv::Mat cvOutputData = OP_OP2CVMAT(datumPtr->cvOutputData);
-                    cv::bitwise_not(cvOutputData, cvOutputData);
-                }
-            }
+                    cv::bitwise_not(datumPtr->cvInputData, datumPtr->cvOutputData);
         }
         catch (const std::exception& e)
         {
-            op::opLog("Some kind of unexpected error happened.");
+            op::log("Some kind of unexpected error happened.");
             this->stop();
             op::error(e.what(), __LINE__, __FUNCTION__, __FILE__);
         }
@@ -57,42 +50,40 @@ int openPoseTutorialThread1()
 {
     try
     {
-        op::opLog("Starting OpenPose demo...", op::Priority::High);
+        op::log("Starting OpenPose demo...", op::Priority::High);
         const auto opTimer = op::getTimerInit();
 
         // ------------------------- INITIALIZATION -------------------------
         // Step 1 - Set logging level
             // - 0 will output all the logging messages
             // - 255 will output nothing
-        op::checkBool(
-            0 <= FLAGS_logging_level && FLAGS_logging_level <= 255, "Wrong logging_level value.",
-            __LINE__, __FUNCTION__, __FILE__);
+        op::check(0 <= FLAGS_logging_level && FLAGS_logging_level <= 255, "Wrong logging_level value.",
+                  __LINE__, __FUNCTION__, __FILE__);
         op::ConfigureLog::setPriorityThreshold((op::Priority)FLAGS_logging_level);
         // Step 2 - Read GFlags (user defined configuration)
         // cameraSize
-        const auto cameraSize = op::flagsToPoint(op::String(FLAGS_camera_resolution), "-1x-1");
+        const auto cameraSize = op::flagsToPoint(FLAGS_camera_resolution, "-1x-1");
         // outputSize
-        const auto outputSize = op::flagsToPoint(op::String(FLAGS_output_resolution), "-1x-1");
+        const auto outputSize = op::flagsToPoint(FLAGS_output_resolution, "-1x-1");
         // producerType
         op::ProducerType producerType;
-        op::String producerString;
+        std::string producerString;
         std::tie(producerType, producerString) = op::flagsToProducer(
-            op::String(FLAGS_image_dir), op::String(FLAGS_video), op::String(FLAGS_ip_camera), FLAGS_camera,
-            FLAGS_flir_camera, FLAGS_flir_camera_index);
+            FLAGS_image_dir, FLAGS_video, FLAGS_ip_camera, FLAGS_camera, FLAGS_flir_camera, FLAGS_flir_camera_index);
         const auto displayProducerFpsMode = (FLAGS_process_real_time
                                           ? op::ProducerFpsMode::OriginalFps : op::ProducerFpsMode::RetrievalFps);
         auto producerSharedPtr = createProducer(
-            producerType, producerString.getStdString(), cameraSize, FLAGS_camera_parameter_path, FLAGS_frame_undistort,
+            producerType, producerString, cameraSize, FLAGS_camera_parameter_path, FLAGS_frame_undistort,
             FLAGS_3d_views);
         producerSharedPtr->setProducerFpsMode(displayProducerFpsMode);
-        op::opLog("", op::Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+        op::log("", op::Priority::Low, __LINE__, __FUNCTION__, __FILE__);
         // Step 3 - Setting producer
         auto videoSeekSharedPtr = std::make_shared<std::pair<std::atomic<bool>, std::atomic<int>>>();
         videoSeekSharedPtr->first = false;
         videoSeekSharedPtr->second = 0;
         const op::Point<int> producerSize{
-            (int)producerSharedPtr->get(op::getCvCapPropFrameWidth()),
-            (int)producerSharedPtr->get(op::getCvCapPropFrameHeight())};
+            (int)producerSharedPtr->get(CV_CAP_PROP_FRAME_WIDTH),
+            (int)producerSharedPtr->get(CV_CAP_PROP_FRAME_HEIGHT)};
         // Step 4 - Setting thread workers && manager
         typedef std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> TypedefDatumsSP;
         op::ThreadManager<TypedefDatumsSP> threadManager;
@@ -140,7 +131,7 @@ int openPoseTutorialThread1()
         // threadManager.add(threadId, wGui, queueIn++, queueOut++);               // Thread 0, queues 2 -> 3
 
         // ------------------------- STARTING AND STOPPING THREADING -------------------------
-        op::opLog("Starting thread(s)...", op::Priority::High);
+        op::log("Starting thread(s)...", op::Priority::High);
         // Two different ways of running the program on multithread environment
             // Option a) Using the main thread (this thread) for processing (it saves 1 thread, recommended)
         threadManager.exec();
@@ -154,7 +145,7 @@ int openPoseTutorialThread1()
         // while (threadManager.isRunning())
         //     std::this_thread::sleep_for(std::chrono::milliseconds{33});
         // // Stop and join threads
-        // op::opLog("Stopping thread(s)", op::Priority::High);
+        // op::log("Stopping thread(s)", op::Priority::High);
         // threadManager.stop();
 
         // Measuring total time

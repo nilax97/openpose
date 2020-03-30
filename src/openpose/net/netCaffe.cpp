@@ -1,4 +1,3 @@
-#include <openpose/net/netCaffe.hpp>
 #include <numeric> // std::accumulate
 #ifdef USE_CAFFE
     #include <atomic>
@@ -9,12 +8,13 @@
 #ifdef USE_CUDA
     #include <openpose/gpu/cuda.hpp>
 #endif
+#ifdef USE_OPENCL
+    #include <openpose/gpu/opencl.hcl>
+    #include <openpose/gpu/cl2.hpp>
+#endif
 #include <openpose/utilities/fileSystem.hpp>
 #include <openpose/utilities/standard.hpp>
-#ifdef USE_OPENCL
-    #include <openpose_private/gpu/opencl.hcl>
-    #include <openpose_private/gpu/cl2.hpp>
-#endif
+#include <openpose/net/netCaffe.hpp>
 
 namespace op
 {

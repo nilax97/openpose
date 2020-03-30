@@ -1,6 +1,7 @@
 ﻿#ifndef OPENPOSE_3D_CAMERA_PARAMETER_READER_HPP
 #define OPENPOSE_3D_CAMERA_PARAMETER_READER_HPP
 
+#include <opencv2/core/core.hpp>
 #include <openpose/core/common.hpp>
 
 namespace op
@@ -14,10 +15,10 @@ namespace op
 
         // cameraExtrinsics is optional
         explicit CameraParameterReader(const std::string& serialNumber,
-                                       const Matrix& cameraIntrinsics,
-                                       const Matrix& cameraDistortion,
-                                       const Matrix& cameraExtrinsics = Matrix(),
-                                       const Matrix& cameraExtrinsicsInitial = Matrix());
+                                       const cv::Mat& cameraIntrinsics,
+                                       const cv::Mat& cameraDistortion,
+                                       const cv::Mat& cameraExtrinsics = cv::Mat(),
+                                       const cv::Mat& cameraExtrinsicsInitial = cv::Mat());
 
         // serialNumbers is optional. If empty, it will load all the XML files available in the
         // cameraParameterPath folder
@@ -34,27 +35,34 @@ namespace op
 
         const std::vector<std::string>& getCameraSerialNumbers() const;
 
-        const std::vector<Matrix>& getCameraMatrices() const;
+        const std::vector<cv::Mat>& getCameraMatrices() const;
 
-        const std::vector<Matrix>& getCameraDistortions() const;
+        const std::vector<cv::Mat>& getCameraDistortions() const;
 
-        const std::vector<Matrix>& getCameraIntrinsics() const;
+        const std::vector<cv::Mat>& getCameraIntrinsics() const;
 
-        const std::vector<Matrix>& getCameraExtrinsics() const;
+        const std::vector<cv::Mat>& getCameraExtrinsics() const;
 
-        const std::vector<Matrix>& getCameraExtrinsicsInitial() const;
+        const std::vector<cv::Mat>& getCameraExtrinsicsInitial() const;
 
         bool getUndistortImage() const;
 
         void setUndistortImage(const bool undistortImage);
 
-        void undistort(Matrix& frame, const unsigned int cameraIndex = 0u);
+        void undistort(cv::Mat& frame, const unsigned int cameraIndex = 0u);
 
     private:
-        // PIMPL idiom
-        // http://www.cppsamples.com/common-tasks/pimpl.html
-        struct ImplCameraParameterReader;
-        std::shared_ptr<ImplCameraParameterReader> spImpl;
+        std::vector<std::string> mSerialNumbers;
+        std::vector<cv::Mat> mCameraMatrices;
+        std::vector<cv::Mat> mCameraDistortions;
+        std::vector<cv::Mat> mCameraIntrinsics;
+        std::vector<cv::Mat> mCameraExtrinsics;
+        std::vector<cv::Mat> mCameraExtrinsicsInitial;
+
+        // Undistortion (optional)
+        bool mUndistortImage;
+        std::vector<cv::Mat> mRemoveDistortionMaps1;
+        std::vector<cv::Mat> mRemoveDistortionMaps2;
 
         DELETE_COPY(CameraParameterReader);
     };

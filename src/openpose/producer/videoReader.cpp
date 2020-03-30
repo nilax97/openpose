@@ -1,7 +1,6 @@
-#include <openpose/producer/videoReader.hpp>
 #include <openpose/utilities/fastMath.hpp>
 #include <openpose/utilities/fileSystem.hpp>
-#include <openpose_private/utilities/openCvMultiversionHeaders.hpp>
+#include <openpose/producer/videoReader.hpp>
 
 namespace op
 {
@@ -58,7 +57,7 @@ namespace op
         }
     }
 
-    Matrix VideoReader::getRawFrame()
+    cv::Mat VideoReader::getRawFrame()
     {
         try
         {
@@ -67,11 +66,11 @@ namespace op
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return Matrix();
+            return cv::Mat();
         }
     }
 
-    std::vector<Matrix> VideoReader::getRawFrames()
+    std::vector<cv::Mat> VideoReader::getRawFrames()
     {
         try
         {
@@ -80,20 +79,15 @@ namespace op
             // Split image
             if (cvMats.size() == 1 && numberViews > 1)
             {
-                Matrix opMatConcatenated = cvMats.at(0);
-                cv::Mat matConcatenated = OP_OP2CVMAT(opMatConcatenated);
+                cv::Mat cvMatConcatenated = cvMats.at(0);
                 cvMats.clear();
-                const auto individualWidth = matConcatenated.cols/numberViews;
+                const auto individualWidth = cvMatConcatenated.cols/numberViews;
                 for (auto i = 0 ; i < numberViews ; i++)
-                {
-                    cv::Mat cvMat(
-                        matConcatenated,
-                        cv::Rect{
-                            (int)(i*individualWidth), 0,
-                            (int)individualWidth, (int)matConcatenated.rows });
-                    const Matrix opMat = OP_CV2OPMAT(cvMat);
-                    cvMats.emplace_back(opMat);
-                }
+                    cvMats.emplace_back(
+                        cv::Mat(cvMatConcatenated,
+                                cv::Rect{(int)(i*individualWidth), 0,
+                                         (int)individualWidth,
+                                         (int)cvMatConcatenated.rows}));
             }
             // Sanity check
             else if (cvMats.size() != 1u && numberViews > 1)

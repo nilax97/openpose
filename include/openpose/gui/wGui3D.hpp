@@ -68,14 +68,14 @@ namespace op
             if (tDatums != nullptr)
             {
                 // Debugging log
-                opLogIfDebug("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+                dLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
                 // Profiling speed
                 const auto profilerKey = Profiler::timerInit(__LINE__, __FUNCTION__, __FILE__);
                 // Update cvMat & keypoints
                 if (!tDatums->empty())
                 {
                     // Update cvMat
-                    std::vector<Matrix> cvOutputDatas;
+                    std::vector<cv::Mat> cvOutputDatas;
                     for (auto& tDatumPtr : *tDatums)
                         cvOutputDatas.emplace_back(tDatumPtr->cvOutputData);
                     spGui3D->setImage(cvOutputDatas);
@@ -100,7 +100,7 @@ namespace op
                     Profiler::printAveragedTimeMsOnIterationX(profilerKey, __LINE__, __FUNCTION__, __FILE__);
                 }
                 // Debugging log
-                opLogIfDebug("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
+                dLog("", Priority::Low, __LINE__, __FUNCTION__, __FILE__);
             }
         }
         catch (const std::exception& e)

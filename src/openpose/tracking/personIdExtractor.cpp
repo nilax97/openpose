@@ -1,30 +1,11 @@
-#include <openpose/tracking/personIdExtractor.hpp>
-#include <atomic>
-#include <tuple>
-#include <unordered_map>
-#include <unordered_set>
+#include <openpose/tracking/pyramidalLK.hpp>
 #include <openpose/utilities/fastMath.hpp>
-#include <openpose_private/tracking/pyramidalLK.hpp>
+#include <openpose/tracking/personIdExtractor.hpp>
 
 // #define LK_CUDA
 
 namespace op
 {
-    struct PersonEntry
-    {
-        long long counterLastDetection;
-        std::vector<cv::Point2f> keypoints;
-        std::vector<char> status;
-        /*
-        PersonEntry(long long _last_frame,
-                    std::vector<cv::Point2f> _keypoints,
-                    std::vector<char> _active):
-                    last_frame(_last_frame), keypoints(_keypoints),
-                    active(_active)
-                    {}
-        */
-    };
-
     const std::string errorMessage = "ID extractor function (`--identification` flag) not implemented"
                                      " for multiple-view processing.";
 
@@ -65,9 +46,9 @@ namespace op
                     keypoints.emplace_back(cp);
 
                     if (poseKeypoints[{p,kp,2}] < confidenceThreshold)
-                        status.emplace_back(char(1));
+                        status.emplace_back(1);
                     else
-                        status.emplace_back(char(0));
+                        status.emplace_back(0);
                 }
             }
             // Return result
@@ -148,9 +129,9 @@ namespace op
                     keypoints.emplace_back(cp);
 
                     if (poseKeypoints[{p,kp,2}] < confidenceThreshold)
-                        status.emplace_back(char(1));
+                        status.emplace_back(1);
                     else
-                        status.emplace_back(char(0));
+                        status.emplace_back(0);
                 }
             }
         }
@@ -380,36 +361,14 @@ namespace op
     //     }
     // }
 
-    struct PersonIdExtractor::ImplPersonIdExtractor
-    {
-        const float mConfidenceThreshold;
-        const float mInlierRatioThreshold;
-        const float mDistanceThreshold;
-        const int mNumberFramesToDeletePerson;
-        long long mNextPersonId;
-        cv::Mat mImagePrevious;
-        std::vector<cv::Mat> mPyramidImagesPrevious;
-        std::unordered_map<int, PersonEntry> mPersonEntries;
-        // Thread-safe variables
-        std::atomic<long long> mLastFrameId;
-
-        ImplPersonIdExtractor(
-            const float confidenceThreshold, const float inlierRatioThreshold, const float distanceThreshold,
-            const int numberFramesToDeletePerson) :
-            mConfidenceThreshold{confidenceThreshold},
-            mInlierRatioThreshold{inlierRatioThreshold},
-            mDistanceThreshold{distanceThreshold},
-            mNumberFramesToDeletePerson{numberFramesToDeletePerson},
-            mNextPersonId{0ll},
-            mLastFrameId{-1ll}
-        {
-        }
-    };
-
     PersonIdExtractor::PersonIdExtractor(const float confidenceThreshold, const float inlierRatioThreshold,
                                          const float distanceThreshold, const int numberFramesToDeletePerson) :
-        spImpl{new ImplPersonIdExtractor{confidenceThreshold, inlierRatioThreshold, distanceThreshold,
-            numberFramesToDeletePerson}}
+        mConfidenceThreshold{confidenceThreshold},
+        mInlierRatioThreshold{inlierRatioThreshold},
+        mDistanceThreshold{distanceThreshold},
+        mNumberFramesToDeletePerson{numberFramesToDeletePerson},
+        mNextPersonId{0ll},
+        mLastFrameId{-1ll}
     {
         try
         {
@@ -426,7 +385,7 @@ namespace op
     {
     }
 
-    Array<long long> PersonIdExtractor::extractIds(const Array<float>& poseKeypoints, const Matrix& cvMatInput,
+    Array<long long> PersonIdExtractor::extractIds(const Array<float>& poseKeypoints, const cv::Mat& cvMatInput,
                                                    const unsigned long long imageViewIndex)
     {
         try
@@ -437,34 +396,34 @@ namespace op
 
             // Result initialization
             Array<long long> poseIds;
-            const auto openposePersonEntries = captureKeypoints(poseKeypoints, spImpl->mConfidenceThreshold);
+            const auto openposePersonEntries = captureKeypoints(poseKeypoints, mConfidenceThreshold);
+// log(mPersonEntries.size());
 
             // First frame
-            const cv::Mat cvMatcvMatInput = OP_OP2CVCONSTMAT(cvMatInput);
-            if (spImpl->mImagePrevious.empty())
+            if (mImagePrevious.empty())
             {
                 // Add first persons to the LK set
-                initializeLK(spImpl->mPersonEntries, spImpl->mNextPersonId, poseKeypoints, spImpl->mConfidenceThreshold);
+                initializeLK(mPersonEntries, mNextPersonId, poseKeypoints, mConfidenceThreshold);
                 // Capture current frame as floating point
-                cvMatcvMatInput.convertTo(spImpl->mImagePrevious, CV_32F);
+                cvMatInput.convertTo(mImagePrevious, CV_32F);
             }
             // Rest
             else
             {
                 cv::Mat imageCurrent;
                 std::vector<cv::Mat> pyramidImagesCurrent;
-                cvMatcvMatInput.convertTo(imageCurrent, CV_32F);
-                updateLK(spImpl->mPersonEntries, spImpl->mPyramidImagesPrevious, pyramidImagesCurrent, spImpl->mImagePrevious, imageCurrent,
-                         spImpl->mNumberFramesToDeletePerson);
-                spImpl->mImagePrevious = imageCurrent;
-                spImpl->mPyramidImagesPrevious = pyramidImagesCurrent;
+                cvMatInput.convertTo(imageCurrent, CV_32F);
+                updateLK(mPersonEntries, mPyramidImagesPrevious, pyramidImagesCurrent, mImagePrevious, imageCurrent,
+                         mNumberFramesToDeletePerson);
+                mImagePrevious = imageCurrent;
+                mPyramidImagesPrevious = pyramidImagesCurrent;
             }
 
             // Get poseIds and update LKset according to OpenPose set
             // poseIds = matchLKAndOP(
             poseIds = matchLKAndOPGreedy(
-                spImpl->mPersonEntries, spImpl->mNextPersonId, openposePersonEntries, spImpl->mImagePrevious, spImpl->mInlierRatioThreshold,
-                spImpl->mDistanceThreshold);
+                mPersonEntries, mNextPersonId, openposePersonEntries, mImagePrevious, mInlierRatioThreshold,
+                mDistanceThreshold);
 
             return poseIds;
         }
@@ -476,7 +435,7 @@ namespace op
     }
 
     Array<long long> PersonIdExtractor::extractIdsLockThread(const Array<float>& poseKeypoints,
-                                                             const Matrix& cvMatInput,
+                                                             const cv::Mat& cvMatInput,
                                                              const unsigned long long imageViewIndex,
                                                              const long long frameId)
     {
@@ -486,12 +445,12 @@ namespace op
             if (imageViewIndex > 0)
                 error(errorMessage, __LINE__, __FUNCTION__, __FILE__);
             // Wait for desired order
-            while (spImpl->mLastFrameId < frameId - 1)
+            while (mLastFrameId < frameId - 1)
                 std::this_thread::sleep_for(std::chrono::microseconds{100});
             // Extract IDs
             const auto ids = extractIds(poseKeypoints, cvMatInput, imageViewIndex);
             // Update last frame id
-            spImpl->mLastFrameId = frameId;
+            mLastFrameId = frameId;
             // Return person ids
             return ids;
         }

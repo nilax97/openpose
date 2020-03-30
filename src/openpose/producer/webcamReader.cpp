@@ -1,8 +1,7 @@
-#include <openpose/producer/webcamReader.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <openpose/utilities/fastMath.hpp>
 #include <openpose/utilities/openCv.hpp>
-#include <openpose_private/utilities/openCvMultiversionHeaders.hpp>
-#include <openpose_private/utilities/openCvPrivate.hpp>
+#include <openpose/producer/webcamReader.hpp>
 
 namespace op
 {
@@ -34,7 +33,7 @@ namespace op
                             + std::to_string(mResolution.y) + " could not being set. Final resolution: "
                             + std::to_string(positiveIntRound(get(CV_CAP_PROP_FRAME_WIDTH))) + "x"
                             + std::to_string(positiveIntRound(get(CV_CAP_PROP_FRAME_HEIGHT))) };
-                        opLog(logMessage, Priority::Max, __LINE__, __FUNCTION__, __FILE__);
+                        log(logMessage, Priority::Max, __LINE__, __FUNCTION__, __FILE__);
                     }
                 }
                 // Set resolution
@@ -123,14 +122,14 @@ namespace op
         }
     }
 
-    Matrix WebcamReader::getRawFrame()
+    cv::Mat WebcamReader::getRawFrame()
     {
         try
         {
             mFrameNameCounter++; // Simple counter: 0,1,2,3,...
 
             // Retrieve frame from buffer
-            Matrix opMat;
+            cv::Mat cvMat;
             auto cvMatRetrieved = false;
             while (!cvMatRetrieved)
             {
@@ -138,7 +137,7 @@ namespace op
                 std::unique_lock<std::mutex> lock{mBufferMutex};
                 if (!mBuffer.empty())
                 {
-                    std::swap(opMat, mBuffer);
+                    std::swap(cvMat, mBuffer);
                     cvMatRetrieved = true;
                 }
                 // No frames available -> sleep & wait
@@ -148,7 +147,7 @@ namespace op
                     std::this_thread::sleep_for(std::chrono::microseconds{5});
                 }
             }
-            return opMat;
+            return cvMat;
 
             // Naive implementation - No flashing buffers
             // return VideoCaptureReader::getRawFrame();
@@ -156,15 +155,15 @@ namespace op
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return Matrix();
+            return cv::Mat();
         }
     }
 
-    std::vector<Matrix> WebcamReader::getRawFrames()
+    std::vector<cv::Mat> WebcamReader::getRawFrames()
     {
         try
         {
-            return std::vector<Matrix>{getRawFrame()};
+            return std::vector<cv::Mat>{getRawFrame()};
         }
         catch (const std::exception& e)
         {
@@ -186,25 +185,15 @@ namespace op
                 if (mDisconnectedCounter > DISCONNETED_THRESHOLD)
                     cameraConnected = reset();
                 // Get frame
-                auto opMat = VideoCaptureReader::getRawFrame();
+                auto cvMat = VideoCaptureReader::getRawFrame();
                 // Detect whether camera is connected
-                // Equivalent code:
-                // const auto newNorm = (
-                //     opMat.empty() ? mLastNorm : cv::norm(opMat.row(opMat.rows() / 2)));
-                double newNorm;
-                if (opMat.empty())
-                    newNorm = mLastNorm;
-                else
-                {
-                    cv::Mat rowMat;
-                    OP_CONST_MAT_RETURN_FUNCTION(rowMat, opMat, row(opMat.rows() / 2));
-                    newNorm = cv::norm(rowMat);
-                }
+                const auto newNorm = (
+                    cvMat.empty() ? mLastNorm : cv::norm(cvMat.row(cvMat.rows/2)));
                 if (mLastNorm == newNorm)
                 {
                     mDisconnectedCounter++;
-                    if (mDisconnectedCounter > 1 && opMat.empty())
-                        opLog("Camera frame empty (it has occurred for the last " + std::to_string(mDisconnectedCounter)
+                    if (mDisconnectedCounter > 1 && cvMat.empty())
+                        log("Camera frame empty (it has occurred for the last " + std::to_string(mDisconnectedCounter)
                             + " consecutive frames).", Priority::Max);
                 }
                 else
@@ -215,7 +204,7 @@ namespace op
                 // If camera disconnected: black image
                 if (!cameraConnected)
                 {
-                    cv::Mat cvMat(mResolution.y, mResolution.x, CV_8UC3, cv::Scalar{0,0,0});
+                    cvMat = cv::Mat(mResolution.y, mResolution.x, CV_8UC3, cv::Scalar{0,0,0});
                     putTextOnCvMat(cvMat, "Camera disconnected, reconnecting...", {cvMat.cols/16, cvMat.rows/2},
                                    cv::Scalar{255, 255, 255}, false, positiveIntRound(2.3*cvMat.cols));
                     // Anti flip + anti rotate frame (so it is balanced with the final flip + rotate)
@@ -224,14 +213,13 @@ namespace op
                     if (int(std::round(rotationAngle)) % 180 != 0.)
                         rotationAngle = 0;
                     const auto flipFrame = ((unsigned char)Producer::get(ProducerProperty::Flip) == 1.);
-                    opMat = OP_CV2OPMAT(cvMat);
-                    rotateAndFlipFrame(opMat, rotationAngle, flipFrame);
+                    rotateAndFlipFrame(cvMat, rotationAngle, flipFrame);
                 }
                 // Move to buffer
-                if (!opMat.empty())
+                if (!cvMat.empty())
                 {
                     const std::lock_guard<std::mutex> lock{mBufferMutex};
-                    std::swap(mBuffer, opMat);
+                    std::swap(mBuffer, cvMat);
                 }
             }
         }
@@ -246,7 +234,7 @@ namespace op
         try
         {
             // If unplugged
-            opLog("Webcam was unplugged, trying to reconnect it.", Priority::Max);
+            log("Webcam was unplugged, trying to reconnect it.", Priority::Max);
             // Sleep
             std::this_thread::sleep_for(std::chrono::milliseconds{1000});
             // Reset camera
